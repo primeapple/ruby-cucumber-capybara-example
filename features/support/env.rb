@@ -1,44 +1,16 @@
-require "capybara/cucumber"
-require "selenium/webdriver"
-require "testingbot"
+require 'capybara/cucumber'
+require 'webdrivers'
 
 Capybara.default_max_wait_time = 10
-Capybara.default_driver = :selenium
+Capybara.default_driver = :selenium_chrome
+Capybara.javascript_driver = :selenium_chrome
 
-Before do | scenario |
-  jobname = "#{scenario.feature.name} - #{scenario.name}"
+# Capybara.register_driver :chrome do |app|
+#   Capybara::Selenium::Driver.new(app, browser: :chrome)
+# end
 
-  Capybara.register_driver :selenium do | app|
-    capabilities = {
-      :version => ENV['version'],
-      :browserName => ENV['browserName'],
-      :platform => ENV['platform'],
-      :name => jobname
-    }
-    url = "https://#{ENV['TB_KEY']}:#{ENV['TB_SECRET']}@hub.testingbot.com/wd/hub".strip
-
-    Capybara::Selenium::Driver.new(app,
-                                   :browser => :remote, :url => url,
-                                   :desired_capabilities => capabilities)
-  end
-
-  # Capybara.current_driver = :remote
-  Capybara.session_name = "#{jobname} - #{ENV['platform']} - " +
-    "#{ENV['browserName']} - #{ENV['version']}"
-
-  @driver = Capybara.current_session.driver
-
-  @session_id = @driver.browser.session_id
-  puts "TestingBotSessionId=#{@session_id} job-name=#{jobname}"
+AfterStep do
+  puts "Look how we got this beauty to show performance"
+  puts page.performance
 end
 
-After do | scenario |
-  @driver.quit
-  api = TestingBot::Api.new(ENV['TB_KEY'], ENV['TB_SECRET'])
-  if scenario.exception
-    api.update_test(sessionid, { :success => false })
-  else
-    api.update_test(sessionid, { :success => true })
-  end
-  Capybara.use_default_driver
-end
